@@ -1,95 +1,123 @@
 from transformers import BertForSequenceClassification, BertTokenizer
 import torch
 
-# Initialize tokenizer and model
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertForSequenceClassification.from_pretrained('bert-base-uncased')
+# Load tokenizer and model
+tokenizer = BertTokenizer.from_pretrained('ProsusAI/finbert')
+model = BertForSequenceClassification.from_pretrained('ProsusAI/finbert')
 
-# Function to chunk text into window size and predict probabilities
-def chunk_text_to_window_size_and_predict_proba(text, tokenizer, model, window_size=512):
-    tokens = tokenizer.encode_plus(text, add_special_tokens=False, return_tensors='pt')
-    input_ids = tokens['input_ids']
-    attention_mask = tokens['attention_mask']
-    total_len = len(input_ids[0])
+# Example text
+txt = """
 
-    proba_list = []
+Major Retail Chain Explores New Technological Innovations
 
-    start = 0
-    while start < total_len:
-        end = min(start + window_size, total_len)
-        
-        # Chunk the input into segments that fit within the model's max length
-        input_ids_chunk = input_ids[0][start:end]
-        attention_mask_chunk = attention_mask[0][start:end]
+July 1, 2024 — A prominent retail chain is currently exploring the integration of new technological innovations across its operations, aiming to enhance efficiency and customer experience.
 
-        # Convert to PyTorch tensors
-        input_dict = {
-            'input_ids': input_ids_chunk.unsqueeze(0),       # Add batch dimension
-            'attention_mask': attention_mask_chunk.unsqueeze(0)  # Add batch dimension
-        }
+The initiative involves testing advanced technologies such as automated customer service systems, AI-powered inventory management, and enhanced checkout processes in select locations.
 
-        # Perform inference and softmax to get probabilities
-        with torch.no_grad():
-            outputs = model(**input_dict)
-            probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
-            proba_list.append(probabilities)
+Automated Customer Service Systems
 
-        # Log sentiment calculation for the current chunk
-        print(f"Chunk [{start}:{end}] - Probabilities: {probabilities}")
+As part of the pilot program, the retail chain is deploying automated customer service systems that utilize AI algorithms to handle inquiries and provide personalized assistance to shoppers.
 
-        start = end
+AI-Powered Inventory Management
 
-    return proba_list
+Additionally, the chain is implementing AI-powered inventory management systems to optimize stock levels and streamline supply chain operations. These systems are expected to improve accuracy in forecasting demand and replenishment cycles.
 
-# Example text for sentiment analysis
-text = """
+Enhanced Checkout Processes
 
-1. HIGHER LEVELS OF RETAIL PARTICIPATION IN CRYPTO THAN TRADITIONAL COMMODITY MARKETS POSE UNIQUE CHALLENGES FOR REGULATORS.
+In an effort to reduce wait times and enhance convenience, the chain is rolling out enhanced checkout processes. These include self-service checkout stations and mobile payment options, providing customers with more flexible payment choices.
 
-One in five Americans report having traded cryptocurrency, and polls suggest crypto trading is more common among younger adults, men, and racial minorities. This is quite different from other financial instruments regulated by the CFTC, Benham noted. “You’re going to have more vulnerable investors… It’s incumbent on us to educate, to inform, to disclose risks involved.”
+Future Expansion
 
-Michael Piwowar, a former Securities and Exchange Commissioner and now executive director of the Milken Institute Center for Financial Markets, linked increased Congressional attention to growth in retail crypto: “If you got one in five households that have interacted with crypto… [members of Congress] are going to start hearing it from their constituents.” Legislation to regulate digital assets has been introduced by Senators Lummis and Gillibrand, Stabenow and Boozman, and Toomey, as well as Representative Gottheimer. The Treasury is actively negotiating bipartisan stablecoin legislation with House Financial Services Committee Chair Waters and Ranking Member McHenry. Benham said that stablecoins, digital currency meant to always be equal to one dollar, are more of a “payment mechanism” and thus should be regulated by prudential banking regulators.
+Pending successful testing and evaluation, the retail chain plans to expand these technological innovations to more locations. Feedback from customers and operational data will inform further refinements and adjustments.
 
-Digital asset regulation may require addressing crypto exchanges and digital wallets. American University Law Professor Hilary Allen noted that the stablecoin legislation under discussion does not, saying, “That is a gaping hole… Almost every major stablecoin… is affiliated with an exchange that profits from trading in that stablecoin.” Mark Wetjen, a former CFTC commissioner and current head of policy and regulatory strategy for FTX (one of the largest crypto exchanges), agreed: “The exchanges are the gateways to the entire crypto space, and so oversight of them is probably most important.” He pushed back that there was no current regulation, noting the requirement for state level licenses, such as New York’s Bitlicense: “If you want to list derivatives on bitcoin, for example, you need a license… so it may not be as dire a situation.”
+Public Response
 
-2. CRYPTO CHALLENGES TRADITIONAL REGULATORY DISTINCTION BETWEEN SECURITIES AND COMMODITIES.
+Public reception to these innovations has been varied, with some customers expressing interest in the potential benefits of improved efficiency and convenience, while others are cautious about the impact on traditional retail jobs.
 
-Traditionally, the SEC regulates securities while the CFTC regulates commodities and derivatives. Whether crypto is a security or commodity remains unclear, as various subcomponents of the crypto ecosystem challenge existing regulatory divisions. For instance, the SEC recently argued  that nine different crypto tokens were securities in an insider trading case while a federal judge ruled that virtual currency like Bitcoin constitutes a commodity.
+Conclusion
 
-Benham called on Congress to provide clarity on which of the hundreds – if not thousands – of coins in existence are securities versus commodities: “Ultimately, we’d like to see law drawing lines.” Piwowar said the lack of clarity creates unwelcome delays as many crypto-related applications before the SEC are “not getting answers” on whether their products represent securities. The result is that some crypto firms are “going outside the United States” to locate their business. Allen cautioned, though, that Congressional action could also constitute an indication that the government supports crypto. She warned against letting crypto into the regulated sphere for fear of giving it “implicit guarantees.”
+The retail chain's exploration of new technological innovations represents a strategic effort to modernize its operations and meet evolving consumer expectations. As the pilot program progresses, the chain aims to strike a balance between leveraging technology for operational improvements and maintaining a positive customer experience.
 
-A solution to the regulatory turf battle could be merging the SEC and CFTC, which Piwowar endorsed, as have many others. Congress, however, has shown little appetite to do so given the different Congressional committee jurisdictions involved.
-
-3. CFTC WILL RESTRUCTURE TO BETTER PROTECT CONSUMERS AND MORE EFFECTIVELY REGULATE MARKETS.
-Benham announced several changes at the CFTC during the Brookings event. First, LabCFTC will become the Office of Technology Innovation, reporting directly to the Chairman’s office. Behnam justified this by stating, “We are past the incubator stage, and digital assets and decentralized financial technologies have outgrown their sandboxes.” Second, CFTC’s Office of Customer Education and Outreach will be realigned within the Office of Public Affairs, which Behnam said would “leverage resources and a broader understanding of the issues facing the general public towards addressing the most critical needs in the most vulnerable communities.” Restructuring within a regulator may appear a bureaucratic shuffle but can reflect changes in internal power, agency focus, and prioritization. Directly reporting to the chair increases an office’s authority and prestige.
-
-4. IS CRYPTO A PASSING FAD (OR WORSE, A BUBBLE THAT THREATENS FINANCIAL MARKETS)?
-Allen argued that crypto is “purposely less efficient and more complicated than a more centralized system,” and does not have any societal value. FTX’s Wetjen disagreed: “The difference here with blockchain as the underpinning means by which you can transfer value is that there are absolutely no gates.” Piwowar broadly agreed with Wetjen that “We’re going to have the new generation of Amazons and Googles come out of this stuff,” but cautioned that while he was at the SEC, “Nine out of ten [crypto applications] were outright fraud, and then out of the one out of ten, nine out of ten of those were probably fraud.” Since January 2021, over 46,000 people have collectively lost over $1 billion to scams involving crypto.
-
-Everyone wants to avoid a repeat of the 2008 global financial crisis. To do so, regulators have focused on avoiding and mitigating “systemic risk” to the financial system. Asked if he sees a “clear and present danger to the existing economic system,” Benham said he did not, pointing out that crypto is not sufficiently interconnected to pose systemic risk. He noted the decrease in crypto values over the past several months did not cause ripples in the financial system or the broader economy. Piwowar turned the question of systemic risk back onto the actions of financial regulators asking: “What is systemic risk?  It’s the risk that a federal policymaker is going to bail out a bank, either directly or indirectly.” Allen agreed that bailing out crypto would be a mistake quipping: “If anything should be able to fail, it should be crypto, which isn’t… funding productive economic capacity.”
-
-Allen also noted the similarity in arguments centered on American global competitiveness which promoted lax regulation for derivatives: “It’s almost identical to the rhetoric we saw around swaps in the 1990s.” Credit default swaps, like crypto now, faced loose regulation and ultimately helped fuel the subprime mortgage crisis. Behnam noted that one of 2008’s biggest lessons was the need for the CFTC to promote market transparency in the “OTC [over-the-counter] derivative space.” Crypto proponents point to the underlying technology as being inherently more transparent, while critics point to the lack of understanding of aspects of the market, such as what assets back stablecoins like Tether.
-
-5. DOES CRYPTO INCREASE FINANCIAL INCLUSION?
-Cryptocurrency proponents frequently cite financial inclusion as a major benefit linking the higher usage of youth and communities of color who have higher rates of being unbanked or underbanked by traditional finance. Allen cautioned against “predatory inclusion” arguing that, “Because there’s no productive capacity behind them, their value derives from finding someone else to buy them from you.” Wetjen’s responded, blending his experience serving as a CFTC Commissioner with his time in the crypto industry: “From my own experience… at the CFTC, there’s plenty of authority that’s already in place for the agency to… be pretty thoughtful and relatively prescriptive, even in terms of what actually should be disclosed to, particularly, retail investors, or users of a platform such as FTX.” He argued that the right policy is “giving people the opportunity to be involved and invest in the space that they like but making sure that it’s done with the right safeguards.”
 
 """
 
-# Get probabilities for each chunk
-proba_list = chunk_text_to_window_size_and_predict_proba(text, tokenizer, model)
+# Tokenize the text
+tokens = tokenizer.encode_plus(txt, add_special_tokens=False, return_tensors='pt')
 
-# Aggregate probabilities
-def get_mean_from_proba(proba_list):
-    with torch.no_grad():
-        stacks = torch.stack(proba_list)
-        mean = stacks.mean(dim=0)
-    return mean
+# Function to chunk input_ids and attention_mask
+def get_input_ids_and_attention_mask_chunk(tokens, chunksize=510):
+    input_ids = tokens['input_ids'][0]
+    attention_mask = tokens['attention_mask'][0]
+    
+    input_id_chunks = []
+    attention_mask_chunks = []
+    
+    for i in range(0, len(input_ids), chunksize):
+        input_chunk = input_ids[i:i+chunksize]
+        attention_chunk = attention_mask[i:i+chunksize]
+        
+        # Add [CLS] and [SEP] tokens at the beginning and end of each chunk
+        input_chunk = torch.cat([torch.tensor([101]), input_chunk, torch.tensor([102])])
+        attention_chunk = torch.cat([torch.tensor([1]), attention_chunk, torch.tensor([1])])
+        
+        # Pad if necessary
+        padding_length = chunksize + 2 - input_chunk.shape[0]
+        if padding_length > 0:
+            input_chunk = torch.cat([input_chunk, torch.zeros(padding_length)])
+            attention_chunk = torch.cat([attention_chunk, torch.zeros(padding_length)])
+        
+        input_id_chunks.append(input_chunk.unsqueeze(0))
+        attention_mask_chunks.append(attention_chunk.unsqueeze(0))
+    
+    return input_id_chunks, attention_mask_chunks
 
-# Calculate the mean probabilities
-mean_probabilities = get_mean_from_proba(proba_list)
+# Get input_ids and attention_mask chunks
+input_id_chunks, attention_mask_chunks = get_input_ids_and_attention_mask_chunk(tokens)
 
-# Get the predicted sentiment label
-predicted_label = torch.argmax(mean_probabilities).item()
+# Sentiment labels
+sentiment_labels = {
+    0: 'positive',
+    1: 'negative',
+    2: 'neutral'
+}
 
-# Print the predicted label (0 for negative, 1 for positive)
-print(f"Predicted sentiment label: {predicted_label}")
+# Perform inference for each chunk and accumulate results
+total_probabilities = None
+chunk_sentiments = []
+
+for input_ids_chunk, attention_mask_chunk in zip(input_id_chunks, attention_mask_chunks):
+    # Prepare input dictionary
+    input_dict = {
+        'input_ids': input_ids_chunk.long(),
+        'attention_mask': attention_mask_chunk.int()
+    }
+
+    # Perform inference
+    outputs = model(**input_dict)
+    probabilities = torch.nn.functional.softmax(outputs[0], dim=-1)
+    
+    # Predict sentiment for the chunk
+    predicted_sentiment = torch.argmax(probabilities).item()
+    chunk_sentiments.append(predicted_sentiment)
+    
+    # Print sentiment for the current chunk
+    sentiment_label = sentiment_labels[predicted_sentiment]
+    print(f"Chunk Sentiment: {sentiment_label}")
+    print(f"Probabilities: {probabilities.tolist()}")
+
+    # Accumulate probabilities for mean calculation
+    if total_probabilities is None:
+        total_probabilities = probabilities
+    else:
+        total_probabilities += probabilities
+
+# Calculate mean probabilities
+mean_probabilities = total_probabilities / len(input_id_chunks)
+
+# Predicted sentiment for the entire text is the argmax of mean probabilities
+predicted_sentiment = torch.argmax(mean_probabilities).item()
+
+# Print overall predicted sentiment
+overall_sentiment_label = sentiment_labels[predicted_sentiment]
+print(f"Overall Predicted Sentiment: {overall_sentiment_label}")
+print(f"Overall Probabilities: {mean_probabilities.tolist()}")
