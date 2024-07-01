@@ -1,49 +1,4 @@
-from transformers import BertForSequenceClassification, BertTokenizer
-import torch
-
-# Initialize tokenizer and model
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertForSequenceClassification.from_pretrained('bert-base-uncased')
-
-# Function to chunk text into window size and predict probabilities
-def chunk_text_to_window_size_and_predict_proba(text, tokenizer, model, window_size=512):
-    tokens = tokenizer.encode_plus(text, add_special_tokens=False, return_tensors='pt')
-    input_ids = tokens['input_ids']
-    attention_mask = tokens['attention_mask']
-    total_len = len(input_ids[0])
-
-    proba_list = []
-
-    start = 0
-    while start < total_len:
-        end = min(start + window_size, total_len)
-        
-        # Chunk the input into segments that fit within the model's max length
-        input_ids_chunk = input_ids[0][start:end]
-        attention_mask_chunk = attention_mask[0][start:end]
-
-        # Convert to PyTorch tensors
-        input_dict = {
-            'input_ids': input_ids_chunk.unsqueeze(0),       # Add batch dimension
-            'attention_mask': attention_mask_chunk.unsqueeze(0)  # Add batch dimension
-        }
-
-        # Perform inference and softmax to get probabilities
-        with torch.no_grad():
-            outputs = model(**input_dict)
-            probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
-            proba_list.append(probabilities)
-
-        # Log sentiment calculation for the current chunk
-        print(f"Chunk [{start}:{end}] - Probabilities: {probabilities}")
-
-        start = end
-
-    return proba_list
-
-# Example text for sentiment analysis
 text = """
-
 1. HIGHER LEVELS OF RETAIL PARTICIPATION IN CRYPTO THAN TRADITIONAL COMMODITY MARKETS POSE UNIQUE CHALLENGES FOR REGULATORS.
 
 One in five Americans report having traded cryptocurrency, and polls suggest crypto trading is more common among younger adults, men, and racial minorities. This is quite different from other financial instruments regulated by the CFTC, Benham noted. “You’re going to have more vulnerable investors… It’s incumbent on us to educate, to inform, to disclose risks involved.”
@@ -73,23 +28,5 @@ Allen also noted the similarity in arguments centered on American global competi
 5. DOES CRYPTO INCREASE FINANCIAL INCLUSION?
 Cryptocurrency proponents frequently cite financial inclusion as a major benefit linking the higher usage of youth and communities of color who have higher rates of being unbanked or underbanked by traditional finance. Allen cautioned against “predatory inclusion” arguing that, “Because there’s no productive capacity behind them, their value derives from finding someone else to buy them from you.” Wetjen’s responded, blending his experience serving as a CFTC Commissioner with his time in the crypto industry: “From my own experience… at the CFTC, there’s plenty of authority that’s already in place for the agency to… be pretty thoughtful and relatively prescriptive, even in terms of what actually should be disclosed to, particularly, retail investors, or users of a platform such as FTX.” He argued that the right policy is “giving people the opportunity to be involved and invest in the space that they like but making sure that it’s done with the right safeguards.”
 
+
 """
-
-# Get probabilities for each chunk
-proba_list = chunk_text_to_window_size_and_predict_proba(text, tokenizer, model)
-
-# Aggregate probabilities
-def get_mean_from_proba(proba_list):
-    with torch.no_grad():
-        stacks = torch.stack(proba_list)
-        mean = stacks.mean(dim=0)
-    return mean
-
-# Calculate the mean probabilities
-mean_probabilities = get_mean_from_proba(proba_list)
-
-# Get the predicted sentiment label
-predicted_label = torch.argmax(mean_probabilities).item()
-
-# Print the predicted label (0 for negative, 1 for positive)
-print(f"Predicted sentiment label: {predicted_label}")
