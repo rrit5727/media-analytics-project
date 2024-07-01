@@ -1,39 +1,123 @@
-from transformers import LongformerTokenizer, LongformerForSequenceClassification 
+from transformers import BertForSequenceClassification, BertTokenizer
+import torch
 
-# source myenv/bin/activate - activate virtual environment if necessary
+# Load tokenizer and model
+tokenizer = BertTokenizer.from_pretrained('ProsusAI/finbert')
+model = BertForSequenceClassification.from_pretrained('ProsusAI/finbert')
 
-# Specify the model 
-model_name = "allenai/longformer-base-4096"
-tokenizer = LongformerTokenizer.from_pretrained(model_name)
-model = LongformerForSequenceClassification.from_pretrained(model_name)
+# Example text
+txt = """
 
-text = """
-  Australia’s private wealth managers and stockbroking firms are a “fertile hunting ground” for global trading technology group ViewTrade, as it targets growth in a market that is expected to have about $9 trillion in superannuation by 2041.
-  Having just kicked off its Australian operations, ViewTrade is helmed by Nigel Singh, platform business Integrated’s former ­operating chief and a former manager at Morgan Stanley Wealth Management.
-  ViewTrade – which counts Morningstar, Citic Securities and Maybank among its global customers – will use Sydney as its regional headquarters to pursue expansion in the Asia-Pacific and India.
-  Mr Singh said the company had identified opportunities in Australia to partner with banks, brokers, wealth managers, fintechs, super funds and family ­offices on their trading, support and brokerage technology. That was particularly the case if they were facilitating or seeking to help their own customers with cross-border and multi-asset ­investments.
-  “A big part of our business is making sure we do the little things right. And so we’ve got to make sure that we do this (expansion) in a sustainable, smart way,” he said.
-  However, Mr Singh is mindful of the challenges that come with getting traction in Australia, where many large players and financial institutions develop their own technology in-house or have established agreements with investment banks or other providers for trading technology services.
-  Globally, ViewTrade competes with companies such as BNY Pershing in areas such as global trading services and execution.
-  “The top bulge bracket investment banks that have operations here in Australia, obviously that’s going to be difficult for us, in terms of the execution piece. But from a wealth management technology piece, we can assist,” Mr Singh said. “The next tier of wealth managers in Australia … that don’t have that institutional connectivity that they used to, that’s a fertile hunting ground.”
-  However, consolidation and cost pressures have been top of mind in the past five years. The private wealth sector in Australia has experienced a wave of dealmaking led by international suitors. Focus Financial Partners acquired a strategic stake in Escala in 2019, while Crestone was acquired by a unit of the Princely family of Liechtenstein, LGT International, in 2022. The stockbroking industry has seen continued margin pressure and rationalisation, including Canaccord Genuity acquiring Patersons Securities in 2019, while in retail banking ANZ is in the process of buying Suncorp’s banking arm.
-  ViewTrade’s global chief executive, Tony Petrilli, said the company had conducted several fact-finding visits to Australia, including one last year that he was part of.
-  “Connectivity is important and every market is built around their local market,” Mr Petrilli said.
-  “Where we can help first and foremost is helping to solve some of the inefficiencies that we saw in Australia, which are no different to any other market we’ve gone to in terms of being able to access other markets without having to open the account in that other country.
-  “We expect to be an important player for them (brokers, wealth managers, advisory firms and super funds) in terms of giving them access to the global markets and inversely bringing non-Australian investors to the Australian market which they would benefit from as well.”
-  As at December 31, ViewTrade had more than $US20bn in assets under administration globally. In cross-border transactions, it brokered $US860.9bn in equity orders between 2020 and 2023.
-  Australia marks the 30th country where ViewTrade, founded in 2000, provides its services.
-  A dearth of Australian initial public offerings in recent years and a spike in investor interest in artificial intelligence and technology stocks has led to more trading by Australians in global markets.
-  Still, it may be a slow burn for ViewTrade in Australia as it seeks to get its business off the ground.
-  Mr Singh said ViewTrade had signed its first customer in Australia, an institutional wholesale dealer, but was unable to disclose the name. He expected a further two customers to take up ViewTrade services by the end of July.
-  “We have a strong, committed pipeline,” he said. “There are strong incumbents in the region … We think, though, that our technology can help certain slivers of the market.”
-  ViewTrade’s analysis estimates that “simple transformations” within Australia’s wealth management industry could create savings of $US160m annually when considering the $US474bn turnover of equities held by Australian accounts in the US. Those savings partly come from ViewTrade’s ability to aggregate trades.
-  The company’s local entity, ViewTrade International Australia, will hold accounts in this market and also be used to expand the firm’s APAC and India presence. It has also proposed expansion into the Middle East following that.
-  ViewTrade’s local team includes operating chief Carl Brazendale, a former GBST and Pershing manager, while Kerri Buggy, a former ClearBank analyst and manager at FinClear and Morgan Stanley, has joined in operations.
-  Deloitte has predicted Australia’s $3.9 trillion superannuation pool will balloon to more than $9 trillion by 2041, putting the nation’s pension market firmly on the radar of offshore-based companies
+Major Retail Chain Explores New Technological Innovations
+
+July 1, 2024 — A prominent retail chain is currently exploring the integration of new technological innovations across its operations, aiming to enhance efficiency and customer experience.
+
+The initiative involves testing advanced technologies such as automated customer service systems, AI-powered inventory management, and enhanced checkout processes in select locations.
+
+Automated Customer Service Systems
+
+As part of the pilot program, the retail chain is deploying automated customer service systems that utilize AI algorithms to handle inquiries and provide personalized assistance to shoppers.
+
+AI-Powered Inventory Management
+
+Additionally, the chain is implementing AI-powered inventory management systems to optimize stock levels and streamline supply chain operations. These systems are expected to improve accuracy in forecasting demand and replenishment cycles.
+
+Enhanced Checkout Processes
+
+In an effort to reduce wait times and enhance convenience, the chain is rolling out enhanced checkout processes. These include self-service checkout stations and mobile payment options, providing customers with more flexible payment choices.
+
+Future Expansion
+
+Pending successful testing and evaluation, the retail chain plans to expand these technological innovations to more locations. Feedback from customers and operational data will inform further refinements and adjustments.
+
+Public Response
+
+Public reception to these innovations has been varied, with some customers expressing interest in the potential benefits of improved efficiency and convenience, while others are cautious about the impact on traditional retail jobs.
+
+Conclusion
+
+The retail chain's exploration of new technological innovations represents a strategic effort to modernize its operations and meet evolving consumer expectations. As the pilot program progresses, the chain aims to strike a balance between leveraging technology for operational improvements and maintaining a positive customer experience.
+
+
 """
 
+# Tokenize the text
+tokens = tokenizer.encode_plus(txt, add_special_tokens=False, return_tensors='pt')
 
-inputs = tokenizer(text, return_tensors="pt", max_length=4096, truncation=True)
+# Function to chunk input_ids and attention_mask
+def get_input_ids_and_attention_mask_chunk(tokens, chunksize=510):
+    input_ids = tokens['input_ids'][0]
+    attention_mask = tokens['attention_mask'][0]
+    
+    input_id_chunks = []
+    attention_mask_chunks = []
+    
+    for i in range(0, len(input_ids), chunksize):
+        input_chunk = input_ids[i:i+chunksize]
+        attention_chunk = attention_mask[i:i+chunksize]
+        
+        # Add [CLS] and [SEP] tokens at the beginning and end of each chunk
+        input_chunk = torch.cat([torch.tensor([101]), input_chunk, torch.tensor([102])])
+        attention_chunk = torch.cat([torch.tensor([1]), attention_chunk, torch.tensor([1])])
+        
+        # Pad if necessary
+        padding_length = chunksize + 2 - input_chunk.shape[0]
+        if padding_length > 0:
+            input_chunk = torch.cat([input_chunk, torch.zeros(padding_length)])
+            attention_chunk = torch.cat([attention_chunk, torch.zeros(padding_length)])
+        
+        input_id_chunks.append(input_chunk.unsqueeze(0))
+        attention_mask_chunks.append(attention_chunk.unsqueeze(0))
+    
+    return input_id_chunks, attention_mask_chunks
 
-outputs = model(**inputs)
+# Get input_ids and attention_mask chunks
+input_id_chunks, attention_mask_chunks = get_input_ids_and_attention_mask_chunk(tokens)
+
+# Sentiment labels
+sentiment_labels = {
+    0: 'positive',
+    1: 'negative',
+    2: 'neutral'
+}
+
+# Perform inference for each chunk and accumulate results
+total_probabilities = None
+chunk_sentiments = []
+
+for input_ids_chunk, attention_mask_chunk in zip(input_id_chunks, attention_mask_chunks):
+    # Prepare input dictionary
+    input_dict = {
+        'input_ids': input_ids_chunk.long(),
+        'attention_mask': attention_mask_chunk.int()
+    }
+
+    # Perform inference
+    outputs = model(**input_dict)
+    probabilities = torch.nn.functional.softmax(outputs[0], dim=-1)
+    
+    # Predict sentiment for the chunk
+    predicted_sentiment = torch.argmax(probabilities).item()
+    chunk_sentiments.append(predicted_sentiment)
+    
+    # Print sentiment for the current chunk
+    sentiment_label = sentiment_labels[predicted_sentiment]
+    print(f"Chunk Sentiment: {sentiment_label}")
+    print(f"Probabilities: {probabilities.tolist()}")
+
+    # Accumulate probabilities for mean calculation
+    if total_probabilities is None:
+        total_probabilities = probabilities
+    else:
+        total_probabilities += probabilities
+
+# Calculate mean probabilities
+mean_probabilities = total_probabilities / len(input_id_chunks)
+
+# Predicted sentiment for the entire text is the argmax of mean probabilities
+predicted_sentiment = torch.argmax(mean_probabilities).item()
+
+# Print overall predicted sentiment
+overall_sentiment_label = sentiment_labels[predicted_sentiment]
+print(f"Overall Predicted Sentiment: {overall_sentiment_label}")
+print(f"Overall Probabilities: {mean_probabilities.tolist()}")
