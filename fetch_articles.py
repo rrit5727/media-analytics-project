@@ -21,7 +21,7 @@ params = {
     'show-fields': 'body',  # Request to show full article body
     'order-by': 'newest',  # Order by newest articles
     'production-office': 'aus',  # Filter by Australian edition
-    'page-size': 10  # Number of results per page
+    'page-size': 20  # Number of results per page
 }
 
 # Function to fetch articles

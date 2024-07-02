@@ -118,9 +118,9 @@ for article in articles_list:
         'headline': headline,
         'overall_sentiment': overall_sentiment_label,
         'most_common_entities': most_common_entities,
-        'num_chunks': len(input_id_chunks),  # Add number of chunks
-        'chunk_probabilities': chunk_probabilities,
-        'chunk_texts': chunk_texts  # Add chunk texts
+        # 'num_chunks': len(input_id_chunks),  # Add number of chunks
+        # 'chunk_probabilities': chunk_probabilities,
+        # 'chunk_texts': chunk_texts  # Add chunk texts
     }
 
     # Append results dictionary to results list
@@ -131,8 +131,8 @@ for result in results:
     print(f"Headline: {result['headline']}")
     print(f"Overall Sentiment: {result['overall_sentiment']}")
     print(f"Most Common Entities: {result['most_common_entities']}")
-    print(f"Number of Chunks: {result['num_chunks']}")
-    for idx, (chunk_text, chunk_prob) in enumerate(zip(result['chunk_texts'], result['chunk_probabilities'])):
-        print(f"Chunk {idx + 1} Text: {chunk_text[:100]}...")  # Print first 100 characters of the chunk text
-        print(f"Chunk {idx + 1} Probabilities: {chunk_prob}")
+    # print(f"Number of Chunks: {result['num_chunks']}")
+    # for idx, (chunk_text, chunk_prob) in enumerate(zip(result['chunk_texts'], result['chunk_probabilities'])):
+    #     print(f"Chunk {idx + 1} Text: {chunk_text[:100]}...")  # Print first 100 characters of the chunk text
+    #     print(f"Chunk {idx + 1} Probabilities: {chunk_prob}")
     print("---------------------------")
