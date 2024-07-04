@@ -16,13 +16,13 @@ base_url = 'https://newsapi.org/v2/everything'
 params = {
     'apiKey': api_key,
     'sources': 'news-com-au',  # Specify news.com.au as the source
-    'pageSize': 1,  # Number of articles per page (fetch only 1 article)
+    'pageSize': 100,  # Number of articles per page (adjust as needed)
     'page': 1,  # Page number (start with 1)
 }
 
 # Function to fetch articles
 def fetch_articles():
-    article_dict = {}
+    articles_list = []
 
     try:
         # Making the request
@@ -33,16 +33,16 @@ def fetch_articles():
             data = response.json()
 
             # Process the data here
-            if data.get('articles'):
-                article = data['articles'][0]  # Get the first article
+            for article in data.get('articles', []):
+                headline = article.get('title', '')
+
+                # Create a dictionary for each article
                 article_dict = {
-                    'headline': article.get('title', ''),
-                    'content': article.get('content', ''),
-                    'published_at': article.get('publishedAt', ''),
-                    'source_name': article['source']['name'],
-                    'url': article['url'],
-                    'image_url': article['urlToImage']
+                    'headline': headline
                 }
+
+                # Append dictionary to articles list
+                articles_list.append(article_dict)
 
         else:
             pass  # Optionally handle error silently without printing
@@ -50,15 +50,15 @@ def fetch_articles():
     except requests.exceptions.RequestException as e:
         pass  # Optionally handle request error silently without printing
 
-    return article_dict
+    return articles_list
 
-# If this file is executed directly, fetch the first article and print the whole response object
+# If this file is executed directly, fetch articles and print the index and headline
 if __name__ == "__main__":
-    article = fetch_articles()
+    articles = fetch_articles()
 
-    # Print the whole response object for the first article
-    if article:
-        print("Response Object for the First Article:")
-        print(article)
+    # Print the index and headline of each article
+    if articles:
+        for index, article in enumerate(articles):
+            print(f"{index + 1}: {article['headline']}")
     else:
         print("No articles fetched")
